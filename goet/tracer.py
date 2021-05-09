@@ -1,28 +1,32 @@
 import sys
 from pprint import pprint
-from dataclasses import asdict
-import json
-from typing import Any, Dict, Tuple, Literal, Optional
+from typing import Any, Callable, Dict, Literal, Optional, Tuple
+
 import attr
 import cattr
-import hypothesis
 from hypothesis import strategies as st
 
-
-Event = Literal['call'] | Literal['line'] | Literal['return'] | Literal['exception'] | Literal['opcode']
+Event = (
+    Literal["call"]
+    | Literal["line"]
+    | Literal["return"]
+    | Literal["exception"]
+    | Literal["opcode"]
+)
+st.register_type_strategy(Any, st.from_type(type).flatmap(st.from_type))
 
 
 @attr.resolve_types
 @attr.define
 class Code:
-    """Code objects represent byte-compiled executable Python code, or bytecode. 
-    
+    """Code objects represent byte-compiled executable Python code, or bytecode.
+
     The difference between a code object and a function object is that the function object contains an explicit reference to the
     function’s globals (the module in which it was defined), while a code object contains no context; also the default argument
     values are stored in the function object, not in the code object (because they represent values calculated at run-time).
     Unlike function objects, code objects are immutable and contain no references (directly or indirectly) to mutable objects.
 
-    Special read-only attributes: 
+    Special read-only attributes:
         co_name gives the function name
         co_argcount is the total number of positional arguments (including positional-only arguments and arguments with default values)
         co_posonlyargcount is the number of positional-only arguments (including arguments with default values)
@@ -51,6 +55,7 @@ class Code:
 
     If a code object represents a function, the first item in co_consts is the documentation string of the function, or None if undefined.
     """
+
     co_name: str
     co_argcount: int
     co_posonlyargcount: int
@@ -60,7 +65,7 @@ class Code:
     co_cellvars: Tuple[str]
     co_freevars: Tuple[str]
     co_code: str
-    co_consts: Tuple[str] # int, float, bool]
+    co_consts: Tuple[str]  # int, float, bool]
     co_names: Tuple[str]
     co_filename: str
     co_firstlineno: int
@@ -89,36 +94,7 @@ class Code:
             co_flags=syscode.co_flags,
         )
 
-    # @classmethod
-    # def from_dict(cls, data):
-    #     return cls(
-    #         co_name=data['co_name'],
-    #         co_argcount=data['co_argcount'],
-    #         co_posonlyargcount=data['co_posonlyargcount'],
-    #         co_kwonlyargcount=data['co_kwonlyargcount'],
-    #         co_nlocals=data['co_nlocals'],
-    #         co_varnames=tuple(data['co_varnames']),
-    #         co_cellvars=tuple(data['co_cellvars']),
-    #         co_freevars=tuple(data['co_freevars']),
-    #         co_code=data['co_code'],
-    #         co_consts=tuple(data['co_consts']),
-    #         co_names=tuple(data['co_names']),
-    #         co_filename=data['co_filename'],
-    #         co_firstlineno=data['co_firstlineno'],
-    #         co_lnotab=data['co_lnotab'],
-    #         co_stacksize=data['co_stacksize'],
-    #         co_flags=data['co_flags'],
-    #     )
 
-    # @classmethod
-    # def from_json(cls, data):
-    #     return cls.from_dict(json.loads(data))        
-
-    # def to_dict(self):
-    #     return asdict(self)
-
-
-st.register_type_strategy(Any, st.from_type(type).flatmap(st.from_type))
 @attr.define
 class Frame:
     """Frame objects represent execution frames. They may occur in traceback objects (see below), and are also passed to registered trace functions.
@@ -141,13 +117,14 @@ class Frame:
     f_lineno is the current line number of the frame — writing to this from within a trace function jumps to the given line (only for the bottom-most frame).
     A debugger can implement a Jump command (aka Set Next Statement) by writing to f_lineno.
     """
+
     f_back: Optional["Frame"]
-    f_code: Code 
+    f_code: Code
     f_locals: Dict[str, Any]
     f_globals: Dict[str, Any]
     f_builtins: Dict[str, Any]
     f_lasti: int
-    # f_trace: None | Callable
+    f_trace: Optional[Callable]
     f_trace_lines: bool
     f_trace_opcodes: bool
     f_lineno: int
@@ -161,91 +138,16 @@ class Frame:
             f_globals=sysframe.f_globals,
             f_builtins=sysframe.f_builtins,
             f_lasti=sysframe.f_lasti,
-            # f_trace=sysframe.f_trace,
+            f_trace=sysframe.f_trace,
             f_trace_lines=sysframe.f_trace_lines,
             f_trace_opcodes=sysframe.f_trace_opcodes,
-            f_lineno=sysframe.f_lineno      
+            f_lineno=sysframe.f_lineno,
         )
 
-    # @classmethod
-    # def from_dict(cls, data):
-    #     return cls(
-    #         f_back=Frame.from_dict(data['f_back']) if data['f_back'] is not None else None,
-    #         f_code=Code.from_dict(data['f_code']) if data['f_code'] is not None else None,
-    #         f_locals=data['f_locals'],
-    #         f_globals=data['f_globals'],
-    #         f_builtins=data['f_builtins'],
-    #         f_lasti=data['f_lasti'],
-    #         # f_trace=data['f_trace'],
-    #         f_trace_lines=data['f_trace_lines'],
-    #         f_trace_opcodes=data['f_trace_opcodes'],
-    #         f_lineno=data['f_lineno'],
-    #     )
-
-    # @classmethod
-    # def from_json(cls, data):
-    #     return cls.from_dict(json.loads(data))
-
-    # def to_dict(self):
-    #     return {
-    #         "f_back": Frame.from_sysframe(self.f_back).to_dict() if self.f_back is not None else None,
-    #         "f_code": Code.from_syscode(self.f_code).to_dict(),
-    #         "f_locals": self.f_locals,
-    #         "f_globals": self.f_globals,
-    #         "f_builtins": self.f_builtins,
-    #         "f_lasti": self.f_lasti,
-    #         # "f_trace": self.f_trace,
-    #         "f_trace_lines": self.f_trace_lines,
-    #         "f_trace_opcodes": self.f_trace_opcodes,
-    #         "f_lineno": self.f_lineno,
-    #     }
-    
-    # def to_json(self):
-    #     return json.dumps(self.to_dict())
 
 # Must be called after Frame is defined to resolve the `f_back: Frame` field.
 attr.resolve_types(Frame, globals(), locals())
 
-
-
-
-# factory = lambda: Frame(
-#     f_back=None,
-#     f_code=Code(
-#         co_name='co_name',
-#         co_argcount=1,
-#         co_posonlyargcount=1,
-#         co_kwonlyargcount=1,
-#         co_nlocals=1,
-#         co_varnames=('co_varnames',),
-#         co_cellvars=('co_cellvars',),
-#         co_freevars=('co_freevars',),
-#         co_code='co_code',
-#         co_consts=('co_consts', ),
-#         co_names=('co_names',),
-#         co_filename='co_filename',
-#         co_firstlineno=1,
-#         co_lnotab='co_lnotab',
-#         co_stacksize=1,
-#         co_flags=1,
-#     ),
-#     f_locals={}, 
-#     f_globals={}, 
-#     f_builtins={}, 
-#     f_lasti=1,
-#     # f_trace=None,
-#     f_trace_lines=True,
-#     f_trace_opcodes=False,
-#     f_lineno=1,
-# )
-# parent, child = factory(), factory()
-# child.f_back = parent
-# pprint(child == Frame.from_json(child.to_json()))
-
-
-## TODO: try writing this with attrs, cattrs, and hypothesis.
-## TODO: try writing this with attrs, cattrs, and hypothesis.
-## TODO: try writing this with attrs, cattrs, and hypothesis.
 converter = cattr.GenConverter()
 
 child = st.from_type(Frame).example()
@@ -254,10 +156,9 @@ pprint(child)
 pprint(child == converter.structure(converter.unstructure(child), Frame))
 
 
-
 class Tracer:
     """Tracer is used to record Python runtime.
-    
+
     >>> with Tracer.trace_manager() as t:
     ...     fn()
     """
@@ -269,7 +170,7 @@ class Tracer:
         sys.settrace(self.tracefunc)
 
     def __exit__(self, *exc):
-        sys.settrace(None)        
+        sys.settrace(None)
 
     def dispatch_call(self, frame):
         # print(f"dispatch_call: {frame=}")
@@ -304,7 +205,8 @@ class Tracer:
         frame.f_trace = self.tracefunc
         frame.f_trace_lines = True
         frame.f_trace_opcodes = False
-        fn(frame)        
+        fn(frame)
+
 
 class A:
     def __init__(self, x):
@@ -313,12 +215,14 @@ class A:
     def __repr__(self) -> str:
         return f"A(x={getattr(self, 'x', None)})"
 
+
 def fn():
     a = A(1)
     fn2()
-    a = 1+1
+    a = 1 + 1
     b = a + 1
     return b
+
 
 def fn2():
     a = 3
