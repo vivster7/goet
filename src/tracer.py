@@ -1,13 +1,19 @@
 import sys
 from pprint import pprint
-from dataclasses import dataclass, asdict
+from dataclasses import asdict
 import json
-from typing import Any, Callable, Dict, Tuple, Literal, Optional
+from typing import Any, Dict, Tuple, Literal, Optional
+import attr
+import cattr
+import hypothesis
+from hypothesis import strategies as st
+
 
 Event = Literal['call'] | Literal['line'] | Literal['return'] | Literal['exception'] | Literal['opcode']
 
 
-@dataclass
+@attr.resolve_types
+@attr.define
 class Code:
     """Code objects represent byte-compiled executable Python code, or bytecode. 
     
@@ -54,7 +60,7 @@ class Code:
     co_cellvars: Tuple[str]
     co_freevars: Tuple[str]
     co_code: str
-    co_consts: Tuple[str, int, float, bool]
+    co_consts: Tuple[str] # int, float, bool]
     co_names: Tuple[str]
     co_filename: str
     co_firstlineno: int
@@ -83,35 +89,37 @@ class Code:
             co_flags=syscode.co_flags,
         )
 
-    @classmethod
-    def from_dict(cls, data):
-        return cls(
-            co_name=data['co_name'],
-            co_argcount=data['co_argcount'],
-            co_posonlyargcount=data['co_posonlyargcount'],
-            co_kwonlyargcount=data['co_kwonlyargcount'],
-            co_nlocals=data['co_nlocals'],
-            co_varnames=tuple(data['co_varnames']),
-            co_cellvars=tuple(data['co_cellvars']),
-            co_freevars=tuple(data['co_freevars']),
-            co_code=data['co_code'],
-            co_consts=tuple(data['co_consts']),
-            co_names=tuple(data['co_names']),
-            co_filename=data['co_filename'],
-            co_firstlineno=data['co_firstlineno'],
-            co_lnotab=data['co_lnotab'],
-            co_stacksize=data['co_stacksize'],
-            co_flags=data['co_flags'],
-        )
+    # @classmethod
+    # def from_dict(cls, data):
+    #     return cls(
+    #         co_name=data['co_name'],
+    #         co_argcount=data['co_argcount'],
+    #         co_posonlyargcount=data['co_posonlyargcount'],
+    #         co_kwonlyargcount=data['co_kwonlyargcount'],
+    #         co_nlocals=data['co_nlocals'],
+    #         co_varnames=tuple(data['co_varnames']),
+    #         co_cellvars=tuple(data['co_cellvars']),
+    #         co_freevars=tuple(data['co_freevars']),
+    #         co_code=data['co_code'],
+    #         co_consts=tuple(data['co_consts']),
+    #         co_names=tuple(data['co_names']),
+    #         co_filename=data['co_filename'],
+    #         co_firstlineno=data['co_firstlineno'],
+    #         co_lnotab=data['co_lnotab'],
+    #         co_stacksize=data['co_stacksize'],
+    #         co_flags=data['co_flags'],
+    #     )
 
-    @classmethod
-    def from_json(cls, data):
-        return cls.from_dict(json.loads(data))        
+    # @classmethod
+    # def from_json(cls, data):
+    #     return cls.from_dict(json.loads(data))        
 
-    def to_dict(self):
-        return asdict(self)
+    # def to_dict(self):
+    #     return asdict(self)
 
-@dataclass
+
+st.register_type_strategy(Any, st.from_type(type).flatmap(st.from_type))
+@attr.define
 class Frame:
     """Frame objects represent execution frames. They may occur in traceback objects (see below), and are also passed to registered trace functions.
 
@@ -159,76 +167,91 @@ class Frame:
             f_lineno=sysframe.f_lineno      
         )
 
-    @classmethod
-    def from_dict(cls, data):
-        return cls(
-            f_back=Frame.from_dict(data['f_back']) if data['f_back'] is not None else None,
-            f_code=Code.from_dict(data['f_code']) if data['f_code'] is not None else None,
-            f_locals=data['f_locals'],
-            f_globals=data['f_globals'],
-            f_builtins=data['f_builtins'],
-            f_lasti=data['f_lasti'],
-            # f_trace=data['f_trace'],
-            f_trace_lines=data['f_trace_lines'],
-            f_trace_opcodes=data['f_trace_opcodes'],
-            f_lineno=data['f_lineno'],
-        )
+    # @classmethod
+    # def from_dict(cls, data):
+    #     return cls(
+    #         f_back=Frame.from_dict(data['f_back']) if data['f_back'] is not None else None,
+    #         f_code=Code.from_dict(data['f_code']) if data['f_code'] is not None else None,
+    #         f_locals=data['f_locals'],
+    #         f_globals=data['f_globals'],
+    #         f_builtins=data['f_builtins'],
+    #         f_lasti=data['f_lasti'],
+    #         # f_trace=data['f_trace'],
+    #         f_trace_lines=data['f_trace_lines'],
+    #         f_trace_opcodes=data['f_trace_opcodes'],
+    #         f_lineno=data['f_lineno'],
+    #     )
 
-    @classmethod
-    def from_json(cls, data):
-        return cls.from_dict(json.loads(data))
+    # @classmethod
+    # def from_json(cls, data):
+    #     return cls.from_dict(json.loads(data))
 
-    def to_dict(self):
-        return {
-            "f_back": Frame.from_sysframe(self.f_back).to_dict() if self.f_back is not None else None,
-            "f_code": Code.from_syscode(self.f_code).to_dict(),
-            "f_locals": self.f_locals,
-            "f_globals": self.f_globals,
-            "f_builtins": self.f_builtins,
-            "f_lasti": self.f_lasti,
-            # "f_trace": self.f_trace,
-            "f_trace_lines": self.f_trace_lines,
-            "f_trace_opcodes": self.f_trace_opcodes,
-            "f_lineno": self.f_lineno,
-        }
+    # def to_dict(self):
+    #     return {
+    #         "f_back": Frame.from_sysframe(self.f_back).to_dict() if self.f_back is not None else None,
+    #         "f_code": Code.from_syscode(self.f_code).to_dict(),
+    #         "f_locals": self.f_locals,
+    #         "f_globals": self.f_globals,
+    #         "f_builtins": self.f_builtins,
+    #         "f_lasti": self.f_lasti,
+    #         # "f_trace": self.f_trace,
+    #         "f_trace_lines": self.f_trace_lines,
+    #         "f_trace_opcodes": self.f_trace_opcodes,
+    #         "f_lineno": self.f_lineno,
+    #     }
     
-    def to_json(self):
-        return json.dumps(self.to_dict())
+    # def to_json(self):
+    #     return json.dumps(self.to_dict())
+
+# Must be called after Frame is defined to resolve the `f_back: Frame` field.
+attr.resolve_types(Frame, globals(), locals())
 
 
 
-factory = lambda: Frame(
-    f_back=None,
-    f_code=Code(
-        co_name='co_name',
-        co_argcount=1,
-        co_posonlyargcount=1,
-        co_kwonlyargcount=1,
-        co_nlocals=1,
-        co_varnames=('co_varnames',),
-        co_cellvars=('co_cellvars',),
-        co_freevars=('co_freevars',),
-        co_code='co_code',
-        co_consts=(),
-        co_names=('co_names',),
-        co_filename='co_filename',
-        co_firstlineno=1,
-        co_lnotab='co_lnotab',
-        co_stacksize=1,
-        co_flags=1,
-    ),
-    f_locals={}, 
-    f_globals={}, 
-    f_builtins={}, 
-    f_lasti=1,
-    # f_trace=None,
-    f_trace_lines=True,
-    f_trace_opcodes=False,
-    f_lineno=1,
-)
-parent, child = factory(), factory()
-child.f_back = parent
-pprint(child == Frame.from_json(child.to_json()))
+
+# factory = lambda: Frame(
+#     f_back=None,
+#     f_code=Code(
+#         co_name='co_name',
+#         co_argcount=1,
+#         co_posonlyargcount=1,
+#         co_kwonlyargcount=1,
+#         co_nlocals=1,
+#         co_varnames=('co_varnames',),
+#         co_cellvars=('co_cellvars',),
+#         co_freevars=('co_freevars',),
+#         co_code='co_code',
+#         co_consts=('co_consts', ),
+#         co_names=('co_names',),
+#         co_filename='co_filename',
+#         co_firstlineno=1,
+#         co_lnotab='co_lnotab',
+#         co_stacksize=1,
+#         co_flags=1,
+#     ),
+#     f_locals={}, 
+#     f_globals={}, 
+#     f_builtins={}, 
+#     f_lasti=1,
+#     # f_trace=None,
+#     f_trace_lines=True,
+#     f_trace_opcodes=False,
+#     f_lineno=1,
+# )
+# parent, child = factory(), factory()
+# child.f_back = parent
+# pprint(child == Frame.from_json(child.to_json()))
+
+
+## TODO: try writing this with attrs, cattrs, and hypothesis.
+## TODO: try writing this with attrs, cattrs, and hypothesis.
+## TODO: try writing this with attrs, cattrs, and hypothesis.
+converter = cattr.GenConverter()
+
+child = st.from_type(Frame).example()
+
+pprint(child)
+pprint(child == converter.structure(converter.unstructure(child), Frame))
 
 
 
