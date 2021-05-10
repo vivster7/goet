@@ -1,0 +1,13 @@
+- [ ] First goal -- get reverse debugging working with just repr strings. Things will not be inspectble.
+
+- [ ] Convert the debugAdapter from TS to Python.
+
+- [ ] Change repr strings to pickled objects
+
+- [ ] I'm having trouble making serializing everything (like instances). 
+      I think I'll have to use pickling to save these objects and then inspect them on demand. 
+      This means the debug Adapter will have to be written in Python.
+      
+        >>> cattr.GenConverter().unstructure(a)
+        <__main__.A object at 0x103d7b760>
+      

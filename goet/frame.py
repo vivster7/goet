@@ -1,19 +1,18 @@
-import sys
-from pprint import pprint
-from typing import Any, Callable, Dict, Literal, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
+from collections.abc import Callable
 
 import attr
 import cattr
+from cattr.converters import Converter, GenConverter
+from cattr.preconf.json import make_converter
+import json
 from hypothesis import strategies as st
 
-Event = (
-    Literal["call"]
-    | Literal["line"]
-    | Literal["return"]
-    | Literal["exception"]
-    | Literal["opcode"]
-)
+
 st.register_type_strategy(Any, st.from_type(type).flatmap(st.from_type))
+# st.register_type_strategy(object, lambda obj: repr(obj))
+# st.register_type_strategy(bytes, lambda x: repr(x))
+# st.register_type_strategy(Callable, lambda callable: repr(callable))
 
 
 @attr.resolve_types
@@ -61,15 +60,15 @@ class Code:
     co_posonlyargcount: int
     co_kwonlyargcount: int
     co_nlocals: int
-    co_varnames: Tuple[str]
-    co_cellvars: Tuple[str]
-    co_freevars: Tuple[str]
-    co_code: str
-    co_consts: Tuple[str]  # int, float, bool]
-    co_names: Tuple[str]
+    # co_varnames: Tuple[str]
+    # co_cellvars: Tuple[str]
+    # co_freevars: Tuple[str]
+    co_code: bytes
+    # co_consts: Tuple[str, int, float, bool]
+    # co_names: Tuple[str]
     co_filename: str
     co_firstlineno: int
-    co_lnotab: str
+    co_lnotab: bytes
     co_stacksize: int
     co_flags: int
 
@@ -81,12 +80,12 @@ class Code:
             co_posonlyargcount=syscode.co_posonlyargcount,
             co_kwonlyargcount=syscode.co_kwonlyargcount,
             co_nlocals=syscode.co_nlocals,
-            co_varnames=syscode.co_varnames,
-            co_cellvars=syscode.co_cellvars,
-            co_freevars=syscode.co_freevars,
+            # co_varnames=syscode.co_varnames,
+            # co_cellvars=syscode.co_cellvars,
+            # co_freevars=syscode.co_freevars,
             co_code=syscode.co_code,
-            co_consts=syscode.co_consts,
-            co_names=syscode.co_names,
+            # co_consts=syscode.co_consts,
+            # co_names=syscode.co_names,
             co_filename=syscode.co_filename,
             co_firstlineno=syscode.co_firstlineno,
             co_lnotab=syscode.co_lnotab,
@@ -121,8 +120,8 @@ class Frame:
     f_back: Optional["Frame"]
     f_code: Code
     f_locals: Dict[str, Any]
-    f_globals: Dict[str, Any]
-    f_builtins: Dict[str, Any]
+    # f_globals: Dict[str, Any]
+    # f_builtins: Dict[str, Any]
     f_lasti: int
     f_trace: Optional[Callable]
     f_trace_lines: bool
@@ -132,102 +131,56 @@ class Frame:
     @classmethod
     def from_sysframe(cls, sysframe):
         return cls(
-            f_back=sysframe.f_back,
-            f_code=sysframe.f_code,
+            f_back=Frame.from_sysframe(sysframe.f_back) if sysframe.f_back else None,
+            f_code=Code.from_syscode(sysframe.f_code),
             f_locals=sysframe.f_locals,
-            f_globals=sysframe.f_globals,
-            f_builtins=sysframe.f_builtins,
+            # f_globals=sysframe.f_globals,
+            # f_builtins=sysframe.f_builtins,
             f_lasti=sysframe.f_lasti,
             f_trace=sysframe.f_trace,
             f_trace_lines=sysframe.f_trace_lines,
             f_trace_opcodes=sysframe.f_trace_opcodes,
             f_lineno=sysframe.f_lineno,
         )
+    
+    def to_json(self):
+        import pickle
+        converter = GenConverter()
+        # def unstructure_object(obj: Any) -> Any:
+        #     try:
+        #         return pickle.dumps(obj)
+        #     except TypeError:
+        #         print(f'{obj=} is not pickleable')
+        #         return str(obj)
+
+        # converter.register_unstructure_hook(Frame, converter.unstructure_attrs_asdict)
+        # converter.register_unstructure_hook(Code, converter.unstructure_attrs_asdict)
+        # converter.register_unstructure_hook(object, unstructure_object)
+
+        unstructured = converter.unstructure(self)
+        print(f"{unstructured=}")
+        return json.dumps(unstructured)
+
+        converter = make_converter()
+        first_pass = converter.unstructure(self)
+
+        def is_not_jsonable(obj):
+            jsonable_types = (str, int, float, bool, list, tuple, dict, type(None))
+            return not isinstance(obj, jsonable_types)
+        c2 = Converter()
+        c2.register_unstructure_hook_func(is_not_jsonable, repr)
+        second_pass = c2.unstructure(first_pass)
+
+        return json.dumps(second_pass)
 
 
 # Must be called after Frame is defined to resolve the `f_back: Frame` field.
 attr.resolve_types(Frame, globals(), locals())
 
-converter = cattr.GenConverter()
-
-child = st.from_type(Frame).example()
-
-pprint(child)
-pprint(child == converter.structure(converter.unstructure(child), Frame))
-
-
-class Tracer:
-    """Tracer is used to record Python runtime.
-
-    >>> with Tracer.trace_manager() as t:
-    ...     fn()
-    """
-
-    def __init__(self):
-        self.data = {}
-
-    def __enter__(self):
-        sys.settrace(self.tracefunc)
-
-    def __exit__(self, *exc):
-        sys.settrace(None)
-
-    def dispatch_call(self, frame):
-        # print(f"dispatch_call: {frame=}")
-        pass
-
-    def dispatch_line(self, frame):
-        # print(f"dispatch_line: {frame=}")
-        pprint(f"{frame.f_lineno}: {frame.f_code.co_name}: {frame.f_locals}: {frame}")
-        # pprint(pickle.dumps(frame))
-        pass
-
-    def dispatch_return(self, frame):
-        pass
-
-    def dispatch_exception(self, frame):
-        pass
-
-    def dispatch_opcode(self, frame):
-        pass
-
-    def tracefunc(self, frame: Frame, event: Event, arg):
-        mapping = {
-            "call": self.dispatch_call,
-            "line": self.dispatch_line,
-            "return": self.dispatch_return,
-            "exception": self.dispatch_exception,
-            "opcode": self.dispatch_opcode,
-        }
-        fn = mapping[event]
-
-        # Trace each line, not just each call
-        frame.f_trace = self.tracefunc
-        frame.f_trace_lines = True
-        frame.f_trace_opcodes = False
-        fn(frame)
-
-
-class A:
-    def __init__(self, x):
-        self.x = x
-
-    def __repr__(self) -> str:
-        return f"A(x={getattr(self, 'x', None)})"
-
-
-def fn():
-    a = A(1)
-    fn2()
-    a = 1 + 1
-    b = a + 1
-    return b
-
-
-def fn2():
-    a = 3
-    return a
-
-
-# with Tracer() as t:
-#     fn()
+# from cattr.preconf.json import make_converter
+# converter = make_converter()
+# child = st.from_type(Frame).example()
+# child.f_back = st.from_type(Frame).example()
+# # child.f_code.co_code = b'123'
+# print(json.dumps(converter.unstructure(child)))
+# print(child == converter.structure(converter.unstructure(child), Frame))
