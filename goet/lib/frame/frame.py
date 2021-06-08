@@ -144,8 +144,8 @@ class Frame:
         )
     
     def to_json(self):
-        import pickle
-        converter = GenConverter()
+        # import pickle
+        # converter = GenConverter()
         # def unstructure_object(obj: Any) -> Any:
         #     try:
         #         return pickle.dumps(obj)
@@ -157,18 +157,35 @@ class Frame:
         # converter.register_unstructure_hook(Code, converter.unstructure_attrs_asdict)
         # converter.register_unstructure_hook(object, unstructure_object)
 
-        unstructured = converter.unstructure(self)
-        print(f"{unstructured=}")
-        return json.dumps(unstructured)
+        # unstructured = converter.unstructure(self)
+        # print(f"{unstructured=}")
+        # return json.dumps(unstructured)
 
         converter = make_converter()
         first_pass = converter.unstructure(self)
 
-        def is_not_jsonable(obj):
+        def is_jsonable(obj):
             jsonable_types = (str, int, float, bool, list, tuple, dict, type(None))
-            return not isinstance(obj, jsonable_types)
+            return isinstance(obj, jsonable_types)
+
+        def is_not_jsonable(obj):
+            return not is_jsonable(obj)
+
+        def unstructure_not_jsonable(obj):
+            for attr in dir(obj):
+                if attr.startswith('__'):
+                    continue
+                elif callable(obj.attr):
+                    return json.dumps({attr: repr(obj.attr)})
+                elif is_jsonable(obj.attr):
+                    return json.dumps({attr: obj.attr})
+                else:
+                    return unstructure_not_jsonable(obj.attr)
+
+                
+
         c2 = Converter()
-        c2.register_unstructure_hook_func(is_not_jsonable, repr)
+        c2.register_unstructure_hook_func(is_not_jsonable, unstructure_not_jsonable)
         second_pass = c2.unstructure(first_pass)
 
         return json.dumps(second_pass)
