@@ -2,7 +2,7 @@ import abc
 from enum import Enum, unique
 import sys
 from typing import Literal, Protocol, Union
-from goet.frame import Frame
+from goet.lib.frame.frame import Frame
 
 Event = Union[Literal["call"], Literal["line"], Literal["return"], Literal["exception"], Literal["opcode"]]
 

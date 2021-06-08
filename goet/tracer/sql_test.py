@@ -1,4 +1,5 @@
 from goet.tracer.sql import SqlTracer
+from goet.lib.db.sqlite import connection
 class A:
     def __init__(self, x):
         self.x = x
@@ -9,7 +10,7 @@ class A:
 
 def fn():
     a = A(1)
-    fn2()
+    # fn2()
     a = 1 + 1
     b = a + 1
     return b
@@ -20,5 +21,8 @@ def fn2():
     return a
 
 
-with SqlTracer() as t:
+with SqlTracer(connection) as t:
     fn()
+
+cursor = connection.cursor()
+print(f"{cursor.execute('select count(*) from lines;').fetchall()}")

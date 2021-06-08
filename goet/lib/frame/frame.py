@@ -4,7 +4,7 @@ from collections.abc import Callable
 import attr
 import cattr
 from cattr.converters import Converter, GenConverter
-from cattr.preconf.json import make_converter
+from goet.lib.converter.converter import make_converter
 import json
 from hypothesis import strategies as st
 
@@ -162,33 +162,35 @@ class Frame:
         # return json.dumps(unstructured)
 
         converter = make_converter()
-        first_pass = converter.unstructure(self)
+        unstructured = converter.unstructure(self)
+        return json.dumps(unstructured)
+        # first_pass = converter.unstructure(self)
 
-        def is_jsonable(obj):
-            jsonable_types = (str, int, float, bool, list, tuple, dict, type(None))
-            return isinstance(obj, jsonable_types)
+        # def is_jsonable(obj):
+        #     jsonable_types = (str, int, float, bool, list, tuple, dict, type(None))
+        #     return isinstance(obj, jsonable_types)
 
-        def is_not_jsonable(obj):
-            return not is_jsonable(obj)
+        # def is_not_jsonable(obj):
+        #     return not is_jsonable(obj)
 
-        def unstructure_not_jsonable(obj):
-            for attr in dir(obj):
-                if attr.startswith('__'):
-                    continue
-                elif callable(obj.attr):
-                    return json.dumps({attr: repr(obj.attr)})
-                elif is_jsonable(obj.attr):
-                    return json.dumps({attr: obj.attr})
-                else:
-                    return unstructure_not_jsonable(obj.attr)
+        # def unstructure_not_jsonable(obj):
+        #     for attr in dir(obj):
+        #         if attr.startswith('__'):
+        #             continue
+        #         elif callable(obj.attr):
+        #             return json.dumps({attr: repr(obj.attr)})
+        #         elif is_jsonable(obj.attr):
+        #             return json.dumps({attr: obj.attr})
+        #         else:
+        #             return unstructure_not_jsonable(obj.attr)
 
                 
 
-        c2 = Converter()
-        c2.register_unstructure_hook_func(is_not_jsonable, unstructure_not_jsonable)
-        second_pass = c2.unstructure(first_pass)
+        # c2 = Converter()
+        # c2.register_unstructure_hook_func(is_not_jsonable, unstructure_not_jsonable)
+        # second_pass = c2.unstructure(first_pass)
 
-        return json.dumps(second_pass)
+        # return json.dumps(second_pass)
 
 
 # Must be called after Frame is defined to resolve the `f_back: Frame` field.

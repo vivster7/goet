@@ -1,6 +1,6 @@
 import sys
 import json
-from goet.frame import Frame
+from goet.lib.frame.frame import Frame
 from goet.tracer.base import BaseTracer
 from pprint import pprint
 

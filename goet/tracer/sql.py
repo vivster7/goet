@@ -1,28 +1,9 @@
 import sqlite3
 import sys
-import cattr
-from cattr.preconf.json import make_converter
-import json
-from sqlite3.dbapi2 import connect
 
-from goet.frame import Frame
+from goet.lib.frame.frame import Frame
+from goet.lib.db.sqlite import connection
 from goet.tracer.base import BaseTracer
-
-connection = sqlite3.connect('test.rdb.sqlite3')
-cursor = connection.cursor()
-
-
-# snapshot consists of all the frames + all the variables
-sql = '''
-DROP TABLE IF EXISTS lines;
-
-CREATE TABLE lines (
-    id INTEGER PRIMARY KEY,
-    snapshot BLOB
-);
-'''
-
-cursor.executescript(sql)
 
 
 class SqlTracer(BaseTracer):
@@ -31,20 +12,30 @@ class SqlTracer(BaseTracer):
     >>> with SqlTracer.trace_manager() as t:
     ...     fn()
     """
+    def __init__(self, connection: sqlite3.Connection):
+        self.connection = connection
+        self.cursor = connection.cursor()
+
+    def __exit__(self, *exc):
+        sys.settrace(None)
+        val = super().__exit__(*exc)
+        self.connection.commit()
+        return val
+
     def dispatch_call(self, frame):
         pass
 
     def dispatch_line(self, sysframe):
         sys.settrace(None)
         frame = Frame.from_sysframe(sysframe)
-        
-        sql = f'''
-        INSERT INTO lines (id, snapshot)
-        VALUES (?, ?)
-        '''
-        
-        args = (frame.f_lineno, frame.to_json())
-        cursor.execute(sql, args)
+
+        sql = f"""
+        INSERT INTO lines (snapshot)
+        VALUES (?)
+        """
+
+        args = (frame.to_json(), )
+        self.cursor.execute(sql, args)
 
         sys.settrace(self.tracefunc)
 
