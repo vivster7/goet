@@ -1,4 +1,6 @@
 from goet.tracer.print import PrintTracer
+
+
 class A:
     def __init__(self, x):
         self.x = x
@@ -8,8 +10,8 @@ class A:
 
 
 def fn():
-    # a = A(1)
-    # fn2()
+    a = A(1)
+    fn2()
     a = 1 + 1
     b = a + 1
     return b
