@@ -2,7 +2,7 @@ import json
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict
 
 import attr
 from goet.lib.converter.converter import make_converter
@@ -33,12 +33,13 @@ test(False, "false")
 test(None, "null")
 test("a", '"a"')
 
-# Containers
+# Containers[Primitives]
 test((), "[]")
 test([], "[]")
 test(set(), "[]")
 test(frozenset(), "[]")
 test({}, "{}")
+test({"a": 1}, '{"a": 1}')
 test(Counter(), "{}")
 test(defaultdict(), "{}")
 
@@ -70,9 +71,10 @@ test(B(x=1), '{"x": 1}')
 @attr.define
 class C:
     x: int
+    y: Dict[str, Any]
 
 
-test(C(x=1), '{"x": 1}')
+test(C(x=1, y={"a": 1}), '{"x": 1, "y": {"a": 1}}')
 
 
 @attr.frozen
@@ -103,27 +105,33 @@ def f():
     return
 
 
-test(f, '{"f": "<function f>"}')
+test(f, '"<function f>"')
 
 
 def g():
     return f
 
 
-test(g, '{"g": "<function g>"}')
+test(g, '"<function g>"')
 
 
 def h(x):
     return x
 
 
-test(h, '{"h": "<function h>"}')
+test(h, '"<function h>"')
 
 
 def i():
     return i
 
 
-test(i, '{"i": "<function i>"}')
+test(i, '"<function i>"')
 
-test(lambda: 1, '{"<lambda>": "<function <lambda>>"}')
+test(lambda: 1, '"<function <lambda>>"')
+
+# Containers[Complex]
+test({"a": {"b": b"123"}}, '{"a": {"b": "F)}j"}}')
+test({"a": {"f": f}}, '{"a": {"f": "<function f>"}}')
+test({"a": {"A": A}}, '{"a": {"A": "<class \'__main__.A\'>"}}')
+test({"a": {"b": B(x=1)}}, '{"a": {"b": {"x": 1}}}')
