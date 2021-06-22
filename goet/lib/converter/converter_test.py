@@ -100,6 +100,11 @@ class F:
 
 test(F(f=F(f=None)), json.dumps({"f": {"f": None}}))
 
+# Recursive class
+ff = F(f=None)
+ff.f = ff
+test(ff, '{"f": "<recursive <__main__.F object at ...>"}')
+
 # Functions
 def f():
     return
