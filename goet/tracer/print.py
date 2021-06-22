@@ -1,6 +1,7 @@
 import sys
 import json
 from typing import List, Optional
+from goet.lib.converter.converter import converter
 from goet.lib.frame.frame import Frame
 from goet.tracer.base import BaseTracer
 from pprint import pprint
@@ -39,7 +40,6 @@ class PrintTracer(BaseTracer):
     def dispatch_call(self, frame):
         PREV_FRAME_IDS.append(CURR_FRAME_ID)
         # print(f"dispatch_call: {frame=}")
-        pass
 
     def dispatch_line(self, sysframe):
         # print(f"dispatch_line: {sysframe=}")
@@ -48,12 +48,11 @@ class PrintTracer(BaseTracer):
             global CURR_FRAME_ID
             CURR_FRAME_ID += 1
             frame = Frame.from_sysframe(sysframe, CURR_FRAME_ID, PREV_FRAME_IDS[-1])
-            pprint(json.loads(frame.to_json()), indent=4)
+            pprint(converter.unstructure(frame), indent=4)
 
     def dispatch_return(self, frame):
         PREV_FRAME_IDS.pop()
         # print(f"dispatch_return: {frame=}")
-        pass
 
     def dispatch_exception(self, frame):
         # print(f"dispatch_exception: {frame=}")

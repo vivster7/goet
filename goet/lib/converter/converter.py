@@ -133,3 +133,6 @@ def make_converter(*args, **kwargs) -> GenConverter:
     configure_converter(converter)
 
     return converter
+
+
+converter = make_converter()

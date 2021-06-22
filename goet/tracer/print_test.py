@@ -12,7 +12,6 @@ class A:
 
 
 def fn():
-
     a = A(1)
 
     def f3():
@@ -30,13 +29,11 @@ def fn2():
     return a
 
 
-from pprint import pprint
-import json
+# from pprint import pprint
+# import json
+# import ipdb; ipdb.set_trace()
+# frame = Frame.from_sysframe(sys._getframe(), 1, 1)
+# pprint(json.loads(frame.to_json()), indent=4)
 
-frame = Frame.from_sysframe(sys._getframe(), 1, 1)
-pprint(json.loads(frame.to_json()), indent=4)
-
-# with PrintTracer() as t:
-#     1 + 1
-# pass
-# fn()
+with PrintTracer() as t:
+    fn()

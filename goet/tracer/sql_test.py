@@ -1,5 +1,7 @@
 from goet.tracer.sql import SqlTracer
 from goet.lib.db.sqlite import connection
+
+
 class A:
     def __init__(self, x):
         self.x = x
@@ -25,4 +27,4 @@ with SqlTracer(connection) as t:
     fn()
 
 cursor = connection.cursor()
-print(f"{cursor.execute('select count(*) from lines;').fetchall()}")
+print(f"{cursor.execute('select count(*) from frames;').fetchall()}")

@@ -1,8 +1,6 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 import attr
-from goet.lib.converter.converter import make_converter
-import json
 
 
 @attr.resolve_types
@@ -141,11 +139,6 @@ class Frame:
             # f_trace_opcodes=sysframe.f_trace_opcodes,
             f_lineno=sysframe.f_lineno,
         )
-
-    def to_json(self):
-        converter = make_converter()
-        unstructured = converter.unstructure(self)
-        return json.dumps(unstructured)
 
 
 # Must be called after Frame is defined to resolve the `f_back: Frame` field.
