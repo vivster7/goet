@@ -1,6 +1,6 @@
 {
-    "python.pythonPath": "/Users/vivek.dasari/.pyenv/versions/3.10-dev/bin/python",
-    "python.formatting.provider": "black",
-    "python.linting.enabled": true,
-    "python.linting.mypyEnabled": true
+  "python.pythonPath": "/Users/vivek/.envs/rdb/bin/python",
+  "python.formatting.provider": "black",
+  "python.linting.enabled": true,
+  "python.linting.mypyEnabled": true
 }
