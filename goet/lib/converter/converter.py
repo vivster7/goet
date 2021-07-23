@@ -70,11 +70,11 @@ def unstructure_complex_types(
         return repr(obj)
     elif isinstance(obj, type):
         return repr(obj)
-    elif hasattr(obj, "__slots__"):
+    elif hasattr(obj, "__slots__") and obj.__slots__:
         return {
             slot: unstructure_complex_types(getattr(obj, slot), memo)
             for slot in obj.__slots__
-            if not slot.startswith("__")
+            if not slot.startswith("__") and hasattr(obj, slot)
         }
     elif hasattr(obj, "__dict__"):
         if isinstance(obj, type):
@@ -86,9 +86,9 @@ def unstructure_complex_types(
         }
     elif isinstance(obj, (dict, defaultdict)):
         return {
-            k: unstructure_complex_types(v, memo)
+            str(k): unstructure_complex_types(v, memo)
             for k, v in obj.items()
-            if not k.startswith("__")
+            if not str(k).startswith("__")
         }
     elif hasattr(obj, "__iter__"):
         return [unstructure_complex_types(x, memo) for x in iter(obj)]
