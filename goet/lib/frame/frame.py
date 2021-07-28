@@ -108,6 +108,7 @@ class Frame:
     f_id: int
     f_back_id: int
     f_filename: str
+    f_funcname: str
 
     # Fields from Python
     # f_back: Optional["Frame"]
@@ -127,6 +128,7 @@ class Frame:
             f_id=f_id,
             f_back_id=f_back_id,
             f_filename=sysframe.f_code.co_filename,
+            f_funcname=sysframe.f_code.co_name,
             # f_back=None,
             # f_back=Frame.from_sysframe(sysframe.f_back) if sysframe.f_back else None,
             # f_code=Code.from_syscode(sysframe.f_code),

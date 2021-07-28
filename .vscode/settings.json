@@ -1,5 +1,5 @@
 {
-  "python.pythonPath": "/Users/vivek/.envs/rdb/bin/python",
+  "python.pythonPath": "/Users/vivek/.pyenv/shims/python",
   "python.formatting.provider": "black",
   "python.linting.enabled": true,
   "python.linting.mypyEnabled": true
