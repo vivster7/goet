@@ -21,6 +21,7 @@ def seed_db():
         f_id INTEGER NOT NULL,
         f_back_id INTEGER,
         f_filename TEXT NOT NULL,
+        f_funcname TEXT NOT NULL,
         f_lineno INTEGER NOT NULL,
         f_locals TEXT NOT NULL
     );

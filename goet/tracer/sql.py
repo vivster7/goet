@@ -41,14 +41,15 @@ class SqlTracer(BaseTracer):
             frame = Frame.from_sysframe(sysframe, CURR_FRAME_ID, PREV_FRAME_IDS[-1])
 
             sql = f"""
-            INSERT INTO frames (run_id, f_id, f_back_id, f_filename, f_lineno, f_locals)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO frames (run_id, f_id, f_back_id, f_filename, f_funcname, f_lineno, f_locals)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """
             args = (
                 self.run_id,
                 frame.f_id,
                 frame.f_back_id,
                 frame.f_filename,
+                frame.f_funcname,
                 frame.f_lineno,
                 json.dumps(converter.unstructure(frame.f_locals)),
             )
